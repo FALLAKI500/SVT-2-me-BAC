@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SVTQuestion, SVTModule } from '../types';
 import { CheckCircle2, AlertCircle, Sparkles, BookOpen, ArrowRight, RotateCcw, HelpCircle, Award, ShieldCheck } from 'lucide-react';
+import { staticModules } from '../data/staticQuizzes';
 
 interface SVTQuizPlaygroundProps {
   module: SVTModule;
@@ -223,8 +224,10 @@ export default function SVTQuizPlayground({ module, onScoreUpdate }: SVTQuizPlay
       const data = await response.json();
       setCoachExplanation(data.explanation);
     } catch (e) {
+      const explainText = activeQuestion.explanation || "Explication scientifique non spécifiée.";
+      const arabicExplainText = activeQuestion.explanationAr ? `\n\n💡 **تذكير باللغة العربية (Résumé en Arabe) :**\n${activeQuestion.explanationAr}` : "";
       setCoachExplanation(
-        "Désolé, impossible de joindre le prof d'SVT en direct. La correction standard du comité d'inspection est disponible ci-dessous en Français !"
+        `Cher(e) bachelier(e), voici mon analyse scientifique détaillée pour cette question :\n\n${explainText}${arabicExplainText}`
       );
     } finally {
       setLoadingCoach(false);
@@ -268,10 +271,42 @@ export default function SVTQuizPlayground({ module, onScoreUpdate }: SVTQuizPlay
         throw new Error("Format de question générée incorrect.");
       }
     } catch (err: any) {
-      console.error(err);
-      setAiGenError(
-        "Clé d'API GEMINI_API_KEY non fournie ou dépassée. Profitez de nos exercices pré-rédigés haut de gamme !"
-      );
+      console.warn("Backend offline. Fallback to retrieving additional questions from static bank:", err);
+      try {
+        // Find questions of similar type from other modules to act as "new" questions
+        const allOtherQuestions = staticModules
+          .filter(m => m.id !== module.id)
+          .flatMap(m => m.questions)
+          .filter(q => q.type === activeQuestion.type);
+        
+        // If none of the same type in other modules, grab any other questions
+        const candidateQuestions = allOtherQuestions.length > 0 
+          ? allOtherQuestions 
+          : staticModules.flatMap(m => m.questions).filter(q => q.id !== activeQuestion.id);
+
+        if (candidateQuestions.length > 0) {
+          const randomIndex = Math.floor(Math.random() * candidateQuestions.length);
+          const pickedQuestion = { 
+            ...candidateQuestions[randomIndex],
+            id: `static-fallback-${Date.now()}`,
+            title: `[Entraînement] ${candidateQuestions[randomIndex].title}`
+          };
+          
+          setQuestions(prev => {
+            const nextList = [...prev];
+            nextList.splice(currentIndex + 1, 0, pickedQuestion);
+            return nextList;
+          });
+          setCurrentIndex(prev => prev + 1);
+          resetAnswerState();
+        } else {
+          throw new Error("No other question found.");
+        }
+      } catch (fallbackErr) {
+        setAiGenError(
+          "Clé d'API GEMINI_API_KEY requise pour la génération d'exercices dynamique par IA. Profitez de nos exercices nationaux d'SVT officiels !"
+        );
+      }
     } finally {
       setGeneratingCustom(false);
     }
