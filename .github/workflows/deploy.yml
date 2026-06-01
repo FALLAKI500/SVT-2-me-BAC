@@ -1,6 +1,5 @@
-# Deploy static content to GitHub Pages (M3A BUILD)
-# Bdel biha l-mou7tawa kamel dyal: .github/workflows/static.yml
-name: Deploy static content to Pages
+# Workflow professionnel de déploiement automatique sur GitHub Pages
+name: Deploy Static Content to Pages
 
 on:
   push:
@@ -23,31 +22,29 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node
+      
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-
+          
       - name: Install dependencies
-        run: npm ci
-
-      # MUHIM: kanbniw l-frontend qbel ma ndeployiw (machi l-code lkham)
-      - name: Build
-        run: npx vite build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
+        run: npm ci || npm install
+        
+      - name: Build production bundle
+        run: npm run build
+        
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload dist artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 7it dist/ bohdo, machi l-repo kamla
           path: './dist'
-
+          
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
