@@ -1,0 +1,6 @@
+{
+  "name": "SVT 2eme BAC Maroc",
+  "description": "Plateforme interactive de révision SVT (SVT/PC) pour la 2ème année du Baccalauréat Marocain. QCM, Textes à trous (Ajwiba Monsadila), Couples reliés (Ajwiba Mrbota), Tableaux de comparaison (Ajwiba fi Jadwal) et Prof SVT AI Coach.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
