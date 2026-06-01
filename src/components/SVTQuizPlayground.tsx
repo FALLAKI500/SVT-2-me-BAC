@@ -2,6 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { SVTQuestion, SVTModule } from '../types';
 import { CheckCircle2, AlertCircle, Sparkles, BookOpen, ArrowRight, RotateCcw, HelpCircle, Award, ShieldCheck } from 'lucide-react';
 import { staticModules } from '../data/staticQuizzes';
+import { unit1Groups } from '../data/unit1Questions';
+import { unit2Groups } from '../data/unit2Questions';
+import { unit3Groups } from '../data/unit3Questions';
+import { unit4Groups } from '../data/unit4Questions';
+import { unit5Groups } from '../data/unit5Questions';
+
+const getQuestionsForModuleAndGroup = (moduleId: string, groupIndex: number): SVTQuestion[] => {
+  switch (moduleId) {
+    case 'unite-1':
+      return unit1Groups[groupIndex] || [];
+    case 'unite-2':
+      return unit2Groups[groupIndex] || [];
+    case 'unite-3':
+      return unit3Groups[groupIndex] || [];
+    case 'unite-4':
+      return unit4Groups[groupIndex] || [];
+    case 'unite-5':
+      return unit5Groups[groupIndex] || [];
+    default:
+      return [];
+  }
+};
 
 interface SVTQuizPlaygroundProps {
   module: SVTModule;
@@ -9,6 +31,7 @@ interface SVTQuizPlaygroundProps {
 }
 
 export default function SVTQuizPlayground({ module, onScoreUpdate }: SVTQuizPlaygroundProps) {
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [questions, setQuestions] = useState<SVTQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -32,12 +55,18 @@ export default function SVTQuizPlayground({ module, onScoreUpdate }: SVTQuizPlay
   const [generatingCustom, setGeneratingCustom] = useState(false);
   const [aiGenError, setAiGenError] = useState<string | null>(null);
 
-  // Reset indices and load list
+  // Reset selected series when active unit changes
   useEffect(() => {
-    setQuestions(module.questions);
+    setSelectedGroupIndex(0);
+  }, [module]);
+
+  // Reset indices and load list of questions
+  useEffect(() => {
+    const loadedQuestions = getQuestionsForModuleAndGroup(module.id, selectedGroupIndex);
+    setQuestions(loadedQuestions.length > 0 ? loadedQuestions : module.questions);
     setCurrentIndex(0);
     resetAnswerState();
-  }, [module]);
+  }, [module, selectedGroupIndex]);
 
   const resetAnswerState = () => {
     setQcmSelection([]);
@@ -369,6 +398,41 @@ export default function SVTQuizPlayground({ module, onScoreUpdate }: SVTQuizPlay
 
   return (
     <div className="space-y-6" id="svt-quiz-playground">
+      {/* 5-Set Series Selection Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm" id="series-group-selector-card">
+        <h3 className="text-xs uppercase text-slate-500 font-mono tracking-widest mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
+          <span>Séries d'entraînement • 50 Questions pour cette unité (10 par série)</span>
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          {[0, 1, 2, 3, 4].map((idx) => {
+            const isSelected = selectedGroupIndex === idx;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedGroupIndex(idx)}
+                className={`py-3 px-3.5 rounded-xl border text-center transition-all duration-150 cursor-pointer flex flex-col items-center justify-center gap-1 group/btn ${
+                  isSelected
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md ring-2 ring-indigo-500/20'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-350 hover:text-indigo-700'
+                }`}
+                id={`series-btn-${idx}`}
+              >
+                <span className="text-xs font-black tracking-wide font-sans">Série {idx + 1}</span>
+                <span className={`text-[9.5px] font-bold font-mono px-2 py-0.5 mt-1 rounded-md transition-colors ${
+                  isSelected 
+                    ? 'bg-indigo-700 text-indigo-100' 
+                    : 'bg-slate-200 text-slate-600 group-hover/btn:bg-indigo-50 group-hover/btn:text-indigo-700'
+                }`}>
+                  Questions {idx * 10 + 1}-{idx * 10 + 10}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Quiz Card Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
